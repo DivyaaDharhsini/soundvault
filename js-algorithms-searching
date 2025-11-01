@@ -1,0 +1,57 @@
+// ==================== SEARCHING ALGORITHMS ====================
+// File: js/algorithms/searching.js
+
+function linearSearch(arr, target, key) {
+    const results = [];
+    const targetLower = target.toLowerCase();
+    
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i][key].toLowerCase().includes(targetLower)) {
+            results.push({ item: arr[i], index: i });
+        }
+    }
+    
+    return results;
+}
+
+function binarySearch(arr, target, key) {
+    let left = 0;
+    let right = arr.length - 1;
+    
+    while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        const midVal = arr[mid][key].toLowerCase();
+        const targetVal = target.toLowerCase();
+        
+        if (midVal === targetVal) {
+            return mid;
+        } else if (midVal < targetVal) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    
+    return -1;
+}
+
+function searchLinkedList(list, target, key) {
+    const results = [];
+    const targetLower = target.toLowerCase();
+    let current = list.head;
+    let index = 0;
+    
+    while (current) {
+        if (current.data[key].toLowerCase().includes(targetLower)) {
+            results.push({
+                node: current,
+                data: current.data,
+                index: index
+            });
+        }
+        current = current.next;
+        index++;
+    }
+    
+    return results;
+}
