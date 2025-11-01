@@ -1,0 +1,60 @@
+// ==================== STACK DATA STRUCTURE ====================
+// File: js/dataStructures/Stack.js
+
+class Stack {
+    constructor(maxSize = 20) {
+        this.items = [];
+        this.maxSize = maxSize;
+    }
+
+    push(item) {
+        this.items = this.items.filter(i => i.name !== item.name);
+        this.items.unshift(item);
+        
+        if (this.items.length > this.maxSize) {
+            this.items.pop();
+        }
+    }
+
+    pop() {
+        if (this.isEmpty()) return null;
+        return this.items.shift();
+    }
+
+    peek() {
+        if (this.isEmpty()) return null;
+        return this.items[0];
+    }
+
+    isEmpty() {
+        return this.items.length === 0;
+    }
+
+    size() {
+        return this.items.length;
+    }
+
+    getAll() {
+        return [...this.items];
+    }
+
+    clear() {
+        this.items = [];
+    }
+
+    contains(name) {
+        return this.items.some(item => item.name === name);
+    }
+
+    getAt(index) {
+        if (index < 0 || index >= this.items.length) return null;
+        return this.items[index];
+    }
+
+    print() {
+        console.log('Stack (top to bottom):');
+        this.items.forEach((item, index) => {
+            console.log(`${index}: ${item.name} - ${item.artist}`);
+        });
+    }
+}
