@@ -1,0 +1,108 @@
+// js/utils/constants.js
+
+const SUPABASE_URL = 'https://gcxpdnozdfxispwgdanp.supabase.co/storage/v1/object/public/music';
+
+const SONGS_DATA = [
+    { 
+        name: 'Venmathi', 
+        artist: 'Sid Sriram', 
+        album: 'Hridayapoorvam', 
+        duration: '4:15', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Venmathi(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/venmathi.jpg`
+    },
+    { 
+        name: 'Duppattawaali', 
+        artist: 'Sanjith Hegde, Anila Rajeev', 
+        album: 'Odum Kuthira Chaadum Kuthira', 
+        duration: '3:50', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Duppattawaali(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/duppattawali.jpg`
+    },
+    { 
+        name: 'Jaalakaari', 
+        artist: 'SaiAbhyankkar, Santhosh T Kuruvilla, Binu George', 
+        album: 'Balti', 
+        duration: '4:05', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Jaalakaari(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/jaalakaari.jpg`
+    },
+    { 
+        name: 'Ilakozhiye', 
+        artist: 'Arjun Ashokan, Revathy, Mahesh Narayanan', 
+        album: 'Thalavara', 
+        duration: '3:40', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Ilakozhiye(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/ilakozhiye.jpg`
+    },
+    { 
+        name: 'Lokah Chapter 1', 
+        artist: 'Kalyani, Naslen, Dominic Arun', 
+        album: 'Chandra', 
+        duration: '4:20', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Lokah(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/lokah.jpg`
+    },
+    { 
+        name: 'Naruthingal', 
+        artist: 'Sooraj Santhosh, Chinmayi', 
+        album: 'Sahasam', 
+        duration: '3:55', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Naruthingal(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/naruthingal.jpg`
+    },
+    { 
+        name: 'Thankam', 
+        artist: 'Lukman Avaran, Dhyan Sreenivasan', 
+        album: 'Vala - Story of A Bangle', 
+        duration: '4:10', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Thankam(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/thankam.jpg`
+    },
+    { 
+        name: 'Powerhouse', 
+        artist: 'Anirudh Ravichander, Arivu', 
+        album: 'Coolie', 
+        duration: '3:30', 
+        genre: 'Pop', 
+        url: `${SUPABASE_URL}/Powerhouse%20(Tamil)(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/powerhouse.jpg`
+    },
+    { 
+        name: 'Kanimaa', 
+        artist: 'Santhosh Narayanan', 
+        album: 'Retro', 
+        duration: '4:04', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Kanima(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/kanimaa.jpg`
+    },
+    { 
+        name: 'Vizhi Veekura', 
+        artist: 'Sai Abhyankkar, Sai Smriti', 
+        album: 'Think Indie', 
+        duration: '3:50', 
+        genre: 'Indie', 
+        url: `${SUPABASE_URL}/Vizhi%20Veekura(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/vizhi%20veekura.jpg`
+    },
+    { 
+        name: 'Jinguchaa', 
+        artist: 'A.R. Rahman, Kamal Haasan', 
+        album: 'Thug Life', 
+        duration: '4:15', 
+        genre: 'Hip-Hop', 
+        url: `${SUPABASE_URL}/Jinguchaa(KoshalWorld.Com).mp3`,
+        albumArt: `${SUPABASE_URL}/jinguchaa.jpg`
+    }
+];
+
+const MAX_RECENTLY_PLAYED = 20;
+const DEFAULT_VOLUME = 0.7;
