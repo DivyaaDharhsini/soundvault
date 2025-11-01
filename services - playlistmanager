@@ -1,0 +1,91 @@
+// ==================== PLAYLIST MANAGER SERVICE ====================
+// File: js/services/playlistManager.js
+
+// This file is OPTIONAL - all playlist logic is in app.js
+// Including this for completeness in case you want modular structure
+
+class PlaylistManager {
+    constructor() {
+        this.playlists = {
+            'All Songs': new DoublyLinkedList(),
+            'Favorites': new DoublyLinkedList()
+        };
+        this.currentPlaylist = 'All Songs';
+    }
+
+    createPlaylist(name) {
+        if (this.playlists[name]) {
+            return { success: false, message: 'Playlist already exists' };
+        }
+        this.playlists[name] = new DoublyLinkedList();
+        return { success: true, message: `Created playlist "${name}"` };
+    }
+
+    deletePlaylist(name) {
+        if (['All Songs', 'Favorites', 'Recently Played'].includes(name)) {
+            return { success: false, message: 'Cannot delete system playlist' };
+        }
+        if (!this.playlists[name]) {
+            return { success: false, message: 'Playlist not found' };
+        }
+        delete this.playlists[name];
+        return { success: true, message: `Deleted playlist "${name}"` };
+    }
+
+    addSongToPlaylist(song, playlistName) {
+        if (!this.playlists[playlistName]) {
+            return { success: false, message: 'Playlist not found' };
+        }
+        
+        // Check for duplicates
+        let current = this.playlists[playlistName].head;
+        while (current) {
+            if (current.data.name === song.name) {
+                return { success: false, message: 'Song already in playlist' };
+            }
+            current = current.next;
+        }
+        
+        this.playlists[playlistName].append(song);
+        return { success: true, message: `Added "${song.name}" to ${playlistName}` };
+    }
+
+    removeSongFromPlaylist(songName, playlistName) {
+        if (!this.playlists[playlistName]) {
+            return { success: false, message: 'Playlist not found' };
+        }
+        
+        const deleted = this.playlists[playlistName].delete(songName);
+        if (deleted) {
+            return { success: true, message: `Removed "${songName}"` };
+        }
+        return { success: false, message: 'Song not found' };
+    }
+
+    getPlaylist(name) {
+        return this.playlists[name] || null;
+    }
+
+    getAllPlaylists() {
+        return Object.keys(this.playlists);
+    }
+
+    getPlaylistSize(name) {
+        return this.playlists[name] ? this.playlists[name].getSize() : 0;
+    }
+
+    switchPlaylist(name) {
+        if (!this.playlists[name]) {
+            return { success: false, message: 'Playlist not found' };
+        }
+        this.currentPlaylist = name;
+        return { success: true, playlist: this.playlists[name] };
+    }
+
+    getCurrentPlaylist() {
+        return this.playlists[this.currentPlaylist];
+    }
+}
+
+// Note: This is optional - app.js has all this logic built-in
+// This file is for educational purposes to show service layer pattern
