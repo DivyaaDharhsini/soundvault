@@ -1,0 +1,51 @@
+// ==================== SORTING ALGORITHMS ====================
+// File: js/algorithms/sorting.js
+
+function mergeSort(arr, key) {
+    if (arr.length <= 1) return arr;
+    
+    const mid = Math.floor(arr.length / 2);
+    const left = mergeSort(arr.slice(0, mid), key);
+    const right = mergeSort(arr.slice(mid), key);
+    
+    return merge(left, right, key);
+}
+
+function merge(left, right, key) {
+    const result = [];
+    let i = 0, j = 0;
+    
+    while (i < left.length && j < right.length) {
+        if (left[i][key].toLowerCase() <= right[j][key].toLowerCase()) {
+            result.push(left[i]);
+            i++;
+        } else {
+            result.push(right[j]);
+            j++;
+        }
+    }
+    
+    return result.concat(left.slice(i)).concat(right.slice(j));
+}
+
+function quickSort(arr, compareFn) {
+    if (arr.length <= 1) return arr;
+    
+    const pivot = arr[Math.floor(arr.length / 2)];
+    const left = arr.filter(item => compareFn(item, pivot) < 0);
+    const middle = arr.filter(item => compareFn(item, pivot) === 0);
+    const right = arr.filter(item => compareFn(item, pivot) > 0);
+    
+    return [...quickSort(left, compareFn), ...middle, ...quickSort(right, compareFn)];
+}
+
+function parseDuration(duration) {
+    const parts = duration.split(':').map(p => parseInt(p));
+    return parts[0] * 60 + parts[1];
+}
+
+function compareDuration(a, b) {
+    const durationA = parseDuration(a.duration);
+    const durationB = parseDuration(b.duration);
+    return durationA - durationB;
+}
