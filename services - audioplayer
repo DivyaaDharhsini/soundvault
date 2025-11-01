@@ -1,0 +1,122 @@
+// ==================== AUDIO PLAYER SERVICE ====================
+// File: js/services/audioPlayer.js
+
+// This file is OPTIONAL - all audio logic is in app.js
+// Including this for completeness in case you want modular structure
+
+class AudioPlayer {
+    constructor() {
+        this.audio = new Audio();
+        this.audio.preload = "auto";
+        this.isPlaying = false;
+        this.repeatMode = 0; // 0: off, 1: all, 2: one
+        this.volume = 0.7;
+        this.audio.volume = this.volume;
+    }
+
+    loadSong(song) {
+        this.audio.pause();
+        this.audio.currentTime = 0;
+        
+        if (song.url) {
+            this.audio.src = song.url;
+            this.audio.load();
+        }
+        
+        return { success: true, song };
+    }
+
+    play() {
+        return this.audio.play()
+            .then(() => {
+                this.isPlaying = true;
+                return { success: true };
+            })
+            .catch(error => {
+                return { success: false, error };
+            });
+    }
+
+    pause() {
+        this.audio.pause();
+        this.isPlaying = false;
+        return { success: true };
+    }
+
+    togglePlayPause() {
+        if (this.isPlaying) {
+            return this.pause();
+        } else {
+            return this.play();
+        }
+    }
+
+    setVolume(volume) {
+        this.volume = Math.max(0, Math.min(1, volume));
+        this.audio.volume = this.volume;
+        return { success: true, volume: this.volume };
+    }
+
+    seek(time) {
+        if (this.audio.duration) {
+            this.audio.currentTime = time;
+            return { success: true, time };
+        }
+        return { success: false };
+    }
+
+    seekPercentage(percentage) {
+        if (this.audio.duration) {
+            const time = (percentage / 100) * this.audio.duration;
+            return this.seek(time);
+        }
+        return { success: false };
+    }
+
+    getCurrentTime() {
+        return this.audio.currentTime;
+    }
+
+    getDuration() {
+        return this.audio.duration;
+    }
+
+    getProgress() {
+        if (this.audio.duration) {
+            return (this.audio.currentTime / this.audio.duration) * 100;
+        }
+        return 0;
+    }
+
+    setRepeatMode(mode) {
+        this.repeatMode = mode % 3;
+        return { success: true, mode: this.repeatMode };
+    }
+
+    toggleRepeat() {
+        this.repeatMode = (this.repeatMode + 1) % 3;
+        return { success: true, mode: this.repeatMode };
+    }
+
+    addEventListener(event, callback) {
+        this.audio.addEventListener(event, callback);
+    }
+
+    removeEventListener(event, callback) {
+        this.audio.removeEventListener(event, callback);
+    }
+
+    getState() {
+        return {
+            isPlaying: this.isPlaying,
+            currentTime: this.audio.currentTime,
+            duration: this.audio.duration,
+            volume: this.volume,
+            repeatMode: this.repeatMode,
+            src: this.audio.src
+        };
+    }
+}
+
+// Note: This is optional - app.js has all this logic built-in
+// This file is for educational purposes to show service layer pattern
