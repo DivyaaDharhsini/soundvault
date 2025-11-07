@@ -1,8 +1,7 @@
-// ==================== SEARCHING ALGORITHMS ====================
-// File: js/algorithms/searching.js
 
-function linearSearch(arr, target, key) {
-    const results = [];
+
+function linearSearch(arr, target, key) {  //to search in unsorted list
+    const results = []; 
     const targetLower = target.toLowerCase();
     
     for (let i = 0; i < arr.length; i++) {
@@ -14,7 +13,7 @@ function linearSearch(arr, target, key) {
     return results;
 }
 
-function binarySearch(arr, target, key) {
+function binarySearch(arr, target, key) { //forsorted
     let left = 0;
     let right = arr.length - 1;
     
