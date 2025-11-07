@@ -1,5 +1,4 @@
-// ==================== DOUBLY LINKED LIST DATA STRUCTURE ====================
-// File: js/dataStructures/DoublyLinkedList.js
+
 
 class SongNode {
     constructor(data) {
