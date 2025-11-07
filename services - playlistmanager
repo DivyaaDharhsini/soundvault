@@ -1,8 +1,3 @@
-// ==================== PLAYLIST MANAGER SERVICE ====================
-// File: js/services/playlistManager.js
-
-// This file is OPTIONAL - all playlist logic is in app.js
-// Including this for completeness in case you want modular structure
 
 class PlaylistManager {
     constructor() {
@@ -37,7 +32,7 @@ class PlaylistManager {
             return { success: false, message: 'Playlist not found' };
         }
         
-        // Check for duplicates
+        //for checking duplicates
         let current = this.playlists[playlistName].head;
         while (current) {
             if (current.data.name === song.name) {
@@ -87,5 +82,3 @@ class PlaylistManager {
     }
 }
 
-// Note: This is optional - app.js has all this logic built-in
-// This file is for educational purposes to show service layer pattern
