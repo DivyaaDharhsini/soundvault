@@ -1,4 +1,3 @@
-
 🎵 SoundVault - Data Structures & Algorithms Music Player
 
 A fully functional web-based music player demonstrating practical implementation of core DSA concepts
