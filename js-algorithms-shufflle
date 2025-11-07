@@ -1,5 +1,4 @@
-// ==================== SHUFFLE ALGORITHM ====================
-// File: js/algorithms/shuffle.js
+
 
 function fisherYatesShuffle(list) {
     const arr = list.toArray();
