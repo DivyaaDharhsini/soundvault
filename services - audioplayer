@@ -1,9 +1,4 @@
-// ==================== AUDIO PLAYER SERVICE ====================
-// File: js/services/audioPlayer.js
-
-// This file is OPTIONAL - all audio logic is in app.js
-// Including this for completeness in case you want modular structure
-
+//opt
 class AudioPlayer {
     constructor() {
         this.audio = new Audio();
@@ -118,5 +113,3 @@ class AudioPlayer {
     }
 }
 
-// Note: This is optional - app.js has all this logic built-in
-// This file is for educational purposes to show service layer pattern
