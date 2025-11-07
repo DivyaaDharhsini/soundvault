@@ -1,0 +1,695 @@
+//MAIN APPLICATION LOGIC!!
+
+
+// initialize as dll
+const playlists = {
+    'All Songs': new DoublyLinkedList(),
+    'Favorites': new DoublyLinkedList()
+};
+
+// recently played as stack
+const recentlyPlayedStack = new Stack(MAX_RECENTLY_PLAYED);
+
+
+SONGS_DATA.forEach(song => playlists['All Songs'].append(song));
+
+
+let currentPlaylist = 'All Songs';
+let isPlaying = false;
+let shuffle = false;
+let repeatMode = 0; 
+let sortBy = 'name';
+let playlistToDelete = null;
+let activeDropdown = null;
+
+
+const audio = new Audio();
+audio.preload = "auto";
+
+
+const elements = {
+    searchInput: document.getElementById('searchInput'),
+    playlistList: document.getElementById('playlistList'),
+    songsContainer: document.getElementById('songsContainer'),
+    playBtn: document.getElementById('playBtn'),
+    songTitle: document.getElementById('songTitle'),
+    artistName: document.getElementById('artistName'),
+    albumName: document.getElementById('albumName'),
+    genreName: document.getElementById('genreName'),
+    progressBar: document.getElementById('progressBar'),
+    progressFill: document.getElementById('progressFill'),
+    progressTooltip: document.getElementById('progressTooltip'),
+    currentTimeEl: document.getElementById('currentTime'),
+    totalTimeEl: document.getElementById('totalTime'),
+    volumeControl: document.getElementById('volumeControl'),
+    shuffleBtn: document.getElementById('shuffleBtn'),
+    repeatBtn: document.getElementById('repeatBtn'),
+    sectionTitle: document.getElementById('sectionTitle')
+};
+
+
+function init() {
+    renderPlaylists();
+    renderSongs();
+    audio.volume = DEFAULT_VOLUME;
+    setupEventListeners();
+    setupKeyboardShortcuts();
+    loadSong();
+    
+    console.log('%c🎵 SoundVault DSA Music Player Initialized', 'color: #667eea; font-size: 16px; font-weight: bold');
+    console.log('Data Structures: Doubly Linked List, Stack, HashMap');
+    console.log('Algorithms: Fisher-Yates, Merge Sort, Quick Sort, Binary Search');
+}
+
+function setupEventListeners() {
+    
+    elements.searchInput.addEventListener('input', renderSongs);
+    
+    
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('ended', handleSongEnd);
+    audio.addEventListener('loadedmetadata', () => {
+        elements.totalTimeEl.textContent = formatTime(audio.duration);
+    });
+    
+    // progressbar
+    elements.progressBar.addEventListener('click', seekSong);
+    elements.progressBar.addEventListener('mousemove', showProgressTooltip);
+    elements.progressBar.addEventListener('mouseleave', hideProgressTooltip);
+    
+    // volume control
+    elements.volumeControl.addEventListener('input', (e) => {
+        audio.volume = e.target.value / 100;
+    });
+    
+    
+    document.addEventListener('click', (e) => {
+        if (activeDropdown && !e.target.closest('.action-btn')) {
+            closeAllDropdowns();
+        }
+    });
+}
+//keyboard shortcut
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+
+        switch(e.key) {
+            case ' ':
+                e.preventDefault();
+                togglePlayPause();
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                nextSong();
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                prevSong();
+                break;
+            case 's':
+            case 'S':
+                e.preventDefault();
+                toggleShuffle();
+                break;
+            case 'r':
+            case 'R':
+                e.preventDefault();
+                toggleRepeat();
+                break;
+            case '/':
+                e.preventDefault();
+                elements.searchInput.focus();
+                break;
+            case 'Escape':
+                closePlaylistModal();
+                closeDeleteModal();
+                closeDSAModal();
+                break;
+        }
+    });
+}
+
+//linking playlist manager
+
+function renderPlaylists() {
+    elements.playlistList.innerHTML = '';
+    
+   
+    renderPlaylistItem('All Songs', playlists['All Songs'].getSize());
+    
+    
+    renderPlaylistItem('Favorites', playlists['Favorites'].getSize());
+    
+    
+    renderPlaylistItem('Recently Played', recentlyPlayedStack.size());
+    
+    
+    Object.keys(playlists).forEach(name => {
+        if (!['All Songs', 'Favorites'].includes(name)) {
+            renderPlaylistItem(name, playlists[name].getSize(), true);
+        }
+    });
+}
+
+function renderPlaylistItem(name, count, deletable = false) {
+    const item = document.createElement('div');
+    item.className = `playlist-item ${currentPlaylist === name ? 'active' : ''}`;
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    
+    item.innerHTML = `
+        <div class="playlist-item-name">${name}</div>
+        <div class="playlist-count">(${count})</div>
+        ${deletable ? `<button class="delete-playlist" onclick="event.stopPropagation(); openDeleteModal('${name}')">✕</button>` : ''}
+    `;
+    
+    item.addEventListener('click', () => switchPlaylist(name));
+    elements.playlistList.appendChild(item);
+}
+
+function switchPlaylist(name) {
+    currentPlaylist = name;
+    elements.sectionTitle.textContent = name;
+    renderPlaylists();
+    renderSongs();
+    
+    const playlist = getActivePlaylist();
+    if (playlist && playlist.getSize() > 0) {
+        loadSong();
+    }
+}
+
+function getActivePlaylist() {
+    if (currentPlaylist === 'Recently Played') {
+        // Convert stack to linked list for display
+        const tempList = new DoublyLinkedList();
+        recentlyPlayedStack.getAll().forEach(song => tempList.append(song));
+        return tempList;
+    }
+    return playlists[currentPlaylist];
+}
+
+// linking audioplayer
+
+function renderSongs() {
+    elements.songsContainer.innerHTML = '';
+    const playlist = getActivePlaylist();
+    
+    if (!playlist || playlist.getSize() === 0) {
+        showEmptyState();
+        return;
+    }
+
+    let songs = playlist.toArray();
+    const searchTerm = elements.searchInput.value.toLowerCase();
+    
+    
+    if (searchTerm) {
+        songs = linearSearch(songs, searchTerm, 'name').map(r => r.item);
+        
+       
+        const artistResults = linearSearch(songs, searchTerm, 'artist').map(r => r.item);
+        const albumResults = linearSearch(songs, searchTerm, 'album').map(r => r.item);
+        
+        
+        const allResults = [...songs, ...artistResults, ...albumResults];
+        songs = [...new Set(allResults)];
+    }
+
+    //if shuffle is off
+    if (!shuffle) {
+        songs = sortSongs(songs);
+    }
+
+    if (songs.length === 0) {
+        showEmptyState('No songs found');
+        return;
+    }
+
+    
+    const currentSong = playlist.getCurrent();
+    const currentName = currentSong ? currentSong.name : null;
+
+    songs.forEach((song) => {
+        const item = createSongElement(song, song.name === currentName);
+        elements.songsContainer.appendChild(item);
+    });
+}
+
+function createSongElement(song, isActive) {
+    const item = document.createElement('div');
+    item.className = `song-item ${isActive ? 'active' : ''}`;
+    
+    item.innerHTML = `
+        <div class="song-thumbnail">
+            ${song.albumArt ? `<img src="${song.albumArt}" alt="${song.album}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">` : '🎵'}
+        </div>
+        <div class="song-details">
+            <div class="song-name">${song.name}</div>
+            <div class="song-artist">${song.artist}</div>
+            <div class="song-meta">${song.album} • ${song.genre}</div>
+        </div>
+        <div class="song-actions">
+            <button class="action-btn" onclick="event.stopPropagation(); toggleFavorite('${song.name}')" title="Add to favorites">❤️</button>
+            <button class="action-btn" onclick="event.stopPropagation(); toggleAddToPlaylist(this, '${song.name}')" title="Add to playlist">➕</button>
+            <button class="action-btn" onclick="event.stopPropagation(); deleteSong('${song.name}')" title="Delete from playlist">🗑️</button>
+            <div class="add-to-playlist-dropdown" id="dropdown-${song.name.replace(/\s/g, '-')}"></div>
+        </div>
+        <div class="song-duration">${song.duration}</div>
+    `;
+    
+    item.addEventListener('click', () => playSongByName(song.name));
+    return item;
+}
+
+function showEmptyState(message = 'This playlist is empty') {
+    elements.songsContainer.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">🎵</div>
+            <p><strong>${message}</strong></p>
+            <p>Add songs to get started</p>
+        </div>
+    `;
+}
+
+// linkiing sorting
+
+function sortSongs(songs) {
+    switch(sortBy) {
+        case 'name':
+            return mergeSort(songs, 'name');
+        case 'artist':
+            return mergeSort(songs, 'artist');
+        case 'duration':
+            return quickSort(songs, compareDuration);
+        default:
+            return songs;
+    }
+}
+
+function setSortBy(type) {
+    sortBy = type;
+    document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    
+    if (shuffle) {
+        shuffle = false;
+        elements.shuffleBtn.classList.remove('active');
+    }
+    
+    renderSongs();
+    showToast(`Sorted by ${type} using ${type === 'duration' ? 'Quick Sort' : 'Merge Sort'}`);
+}
+
+// playbak
+
+function loadSong() {
+    const playlist = getActivePlaylist();
+    if (!playlist) return;
+    
+    const song = playlist.getCurrent();
+    if (!song) return;
+
+    audio.pause();
+    audio.currentTime = 0;
+
+    if (song.url) {
+        audio.src = song.url;
+        audio.load();
+    }
+
+    elements.songTitle.textContent = song.name;
+    elements.artistName.textContent = `Artist: ${song.artist}`;
+    elements.albumName.textContent = `Album: ${song.album}`;
+    elements.genreName.textContent = `Genre: ${song.genre}`;
+
+    elements.currentTimeEl.textContent = '0:00';
+    elements.totalTimeEl.textContent = formatTime(parseDuration(song.duration));
+    elements.progressFill.style.width = '0%';
+
+    const albumArtEl = document.querySelector('.album-art');
+    if (song.albumArt) {
+        albumArtEl.innerHTML = `<img src="${song.albumArt}" alt="${song.album}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+    } else {
+        albumArtEl.innerHTML = '🎧';
+    }
+
+    
+    recentlyPlayedStack.push(song);
+    renderPlaylists();
+    renderSongs();
+}
+
+function playSong() {
+    if (audio.src && audio.src !== window.location.href) {
+        audio.play()
+            .then(() => {
+                isPlaying = true;
+                elements.playBtn.textContent = '⏸️';
+            })
+            .catch(e => {
+                console.error('Playback error:', e);
+                showToast('Unable to play audio', 'error');
+            });
+    }
+}
+
+function pauseSong() {
+    audio.pause();
+    isPlaying = false;
+    elements.playBtn.textContent = '▶️';
+}
+
+function togglePlayPause() {
+    if (isPlaying) {
+        pauseSong();
+    } else {
+        playSong();
+    }
+}
+
+function nextSong() {
+    const playlist = getActivePlaylist();
+    if (!playlist) return;
+
+    // linking dll
+    const nextSong = playlist.getNext();
+    if (nextSong) {
+        loadSong();
+        playSong();
+    }
+}
+
+function prevSong() {
+    const playlist = getActivePlaylist();
+    if (!playlist) return;
+
+    
+    const prevSong = playlist.getPrev();
+    if (prevSong) {
+        loadSong();
+        playSong();
+    }
+}
+
+function playSongByName(name) {
+    const playlist = getActivePlaylist();
+    if (!playlist) return;
+
+    playlist.setCurrentByName(name);
+    loadSong();
+    playSong();
+}
+
+function handleSongEnd() {
+    if (repeatMode === 2) {
+        audio.currentTime = 0;
+        playSong();
+    } else if (repeatMode === 1 || shuffle) {
+        nextSong();
+    } else {
+        const playlist = getActivePlaylist();
+        if (playlist && playlist.current && playlist.current.next) {
+            nextSong();
+        } else {
+            pauseSong();
+        }
+    }
+}
+
+// linking shuffle (fisher yates)
+
+function toggleShuffle() {
+    shuffle = !shuffle;
+    elements.shuffleBtn.classList.toggle('active');
+
+    if (!shuffle) {
+        const currentSong = playlists[currentPlaylist].getCurrent();
+        
+        
+        playlists[currentPlaylist] = fisherYatesShuffle(playlists[currentPlaylist]);
+        
+        if (currentSong) {
+            playlists[currentPlaylist].setCurrentByName(currentSong.name);
+        }
+        
+        renderSongs();
+        showToast('Shuffle applied! ');
+    } else {
+        
+        renderSongs();
+        showToast('Shuffle disabled ');
+    }
+}
+
+function toggleRepeat() {
+    repeatMode = (repeatMode + 1) % 3;
+    const modes = ['Off', 'All', 'One'];
+    elements.repeatBtn.textContent = `🔁`;
+    elements.repeatBtn.classList.toggle('active', repeatMode > 0);
+    showToast(`Repeat: ${modes[repeatMode]}`);
+}
+
+
+
+function toggleAddToPlaylist(button, songName) {
+    const dropdownId = `dropdown-${songName.replace(/\s/g, '-')}`;
+    const dropdown = document.getElementById(dropdownId);
+    
+    closeAllDropdowns();
+    
+    if (activeDropdown === dropdown) {
+        activeDropdown = null;
+        return;
+    }
+    
+    dropdown.innerHTML = '';
+    Object.keys(playlists).forEach(playlistName => {
+        if (!['All Songs', 'Recently Played'].includes(playlistName)) {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.textContent = playlistName;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                addSongToPlaylist(songName, playlistName);
+            };
+            dropdown.appendChild(item);
+        }
+    });
+    
+    if (dropdown.children.length === 0) {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.textContent = 'No playlists available';
+        item.style.cursor = 'default';
+        item.style.opacity = '0.5';
+        dropdown.appendChild(item);
+    }
+    
+    dropdown.classList.add('active');
+    activeDropdown = dropdown;
+}
+
+function addSongToPlaylist(songName, playlistName) {
+    const allSongs = playlists['All Songs'];
+    let current = allSongs.head;
+    let song = null;
+
+    while (current) {
+        if (current.data.name === songName) {
+            song = current.data;
+            break;
+        }
+        current = current.next;
+    }
+
+    if (!song) {
+        showToast('Song not found', 'error');
+        closeAllDropdowns();
+        return;
+    }
+
+    const targetPlaylist = playlists[playlistName];
+    let targetCurrent = targetPlaylist.head;
+    let exists = false;
+
+    while (targetCurrent) {
+        if (targetCurrent.data.name === songName) {
+            exists = true;
+            break;
+        }
+        targetCurrent = targetCurrent.next;
+    }
+
+    if (exists) {
+        showToast(`"${songName}" is already in ${playlistName}`, 'error');
+    } else {
+        targetPlaylist.append(song);
+        showToast(`Added "${songName}" to ${playlistName}`);
+        renderPlaylists();
+    }
+
+    closeAllDropdowns();
+}
+
+function toggleFavorite(songName) {
+    const allSongs = playlists['All Songs'];
+    const favorites = playlists['Favorites'];
+
+    let current = allSongs.head;
+    let song = null;
+
+    while (current) {
+        if (current.data.name === songName) {
+            song = current.data;
+            break;
+        }
+        current = current.next;
+    }
+
+    if (!song) return;
+
+    let favCurrent = favorites.head;
+    let exists = false;
+
+    while (favCurrent) {
+        if (favCurrent.data.name === songName) {
+            exists = true;
+            break;
+        }
+        favCurrent = favCurrent.next;
+    }
+
+    if (exists) {
+        favorites.delete(songName);
+        showToast(`Removed "${songName}" from Favorites`, 'error');
+    } else {
+        favorites.append(song);
+        showToast(`Added "${songName}" to Favorites`);
+    }
+
+    renderPlaylists();
+}
+
+function deleteSong(songName) {
+    if (currentPlaylist === 'All Songs') {
+        showToast('Cannot delete from All Songs', 'error');
+        return;
+    }
+
+    if (currentPlaylist === 'Recently Played') {
+        showToast('Cannot delete from Recently Played', 'error');
+        return;
+    }
+
+    const playlist = playlists[currentPlaylist];
+    if (playlist.delete(songName)) {
+        showToast(`Deleted "${songName}" from ${currentPlaylist}`);
+        renderPlaylists();
+        renderSongs();
+    }
+}
+
+function openPlaylistModal() {
+    document.getElementById('playlistModal').classList.add('active');
+    document.getElementById('playlistName').focus();
+}
+
+function closePlaylistModal() {
+    document.getElementById('playlistModal').classList.remove('active');
+    document.getElementById('playlistName').value = '';
+}
+
+function createPlaylist() {
+    const name = document.getElementById('playlistName').value.trim();
+    if (!name) {
+        showToast('Please enter a playlist name', 'error');
+        return;
+    }
+    if (playlists[name]) {
+        showToast('Playlist already exists', 'error');
+        return;
+    }
+
+    playlists[name] = new DoublyLinkedList();
+    renderPlaylists();
+    closePlaylistModal();
+    showToast(`Created playlist "${name}"`);
+}
+
+function openDeleteModal(name) {
+    playlistToDelete = name;
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+    playlistToDelete = null;
+}
+
+function confirmDelete() {
+    if (playlistToDelete) {
+        delete playlists[playlistToDelete];
+
+        if (currentPlaylist === playlistToDelete) {
+            currentPlaylist = 'All Songs';
+        }
+
+        renderPlaylists();
+        renderSongs();
+        showToast(`Deleted playlist "${playlistToDelete}"`, 'error');
+    }
+    closeDeleteModal();
+}
+
+// process / time
+
+function updateProgress() {
+    if (!audio.duration) return;
+    const percentage = (audio.currentTime / audio.duration) * 100;
+    elements.progressFill.style.width = percentage + '%';
+    elements.currentTimeEl.textContent = formatTime(audio.currentTime);
+}
+
+function seekSong(e) {
+    if (!audio.duration) return;
+    const rect = elements.progressBar.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = percent * audio.duration;
+}
+
+function showProgressTooltip(e) {
+    if (!audio.duration) return;
+    const rect = elements.progressBar.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    const time = percent * audio.duration;
+    elements.progressTooltip.textContent = formatTime(time);
+    elements.progressTooltip.style.left = `${e.clientX - rect.left}px`;
+    elements.progressTooltip.style.display = 'block';
+}
+
+function hideProgressTooltip() {
+    elements.progressTooltip.style.display = 'none';
+}
+
+
+
+function showDSAInfo() {
+    document.getElementById('dsaModal').classList.add('active');
+}
+
+function closeDSAModal() {
+    document.getElementById('dsaModal').classList.remove('active');
+}
+
+// Handle Enter key in playlist modal
+document.getElementById('playlistName').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        createPlaylist();
+    }
+});
+
+
+init();
